@@ -1,4 +1,4 @@
-use std::{iter, net::SocketAddr};
+use std::{env, iter, net::SocketAddr};
 
 use anyhow::{bail, Context};
 use clap::Parser;
@@ -59,6 +59,14 @@ impl IpcServer {
     let port = server.local_addr()?.port();
 
     write_ipc_port(port)?;
+
+    // Programs started from `startup_commands` inherit this, which is how
+    // a bar reaches the right instance without having to work out the
+    // session ID and read the port file itself. `ShellExecuteExW`
+    // hands the child our own environment, so there is nothing
+    // per-process to set up.
+    env::set_var("GLAZEWM_IPC_PORT", port.to_string());
+
     info!("IPC server started on: '127.0.0.1:{port}'.");
 
     let task = task::spawn(async move {
